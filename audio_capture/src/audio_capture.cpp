@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 
 #include "audio_common_msgs/AudioData.h"
+#include "audio_common_msgs/AudioDataStamped.h"
 
 namespace audio_transport
 {
@@ -20,6 +21,9 @@ namespace audio_transport
 
         // Need to encoding or publish raw wave data
         ros::param::param<std::string>("~format", _format, "mp3");
+
+        // frame id to put on the message
+        ros::param::param<std::string>("~frame_id", _frame_id, "audio");
 
         // The bitrate at which to encode the audio
         ros::param::param<int>("~bitrate", _bitrate, 192);
@@ -38,6 +42,7 @@ namespace audio_transport
         ros::param::param<std::string>("~device", device, "");
 
         _pub = _nh.advertise<audio_common_msgs::AudioData>("audio", 10, true);
+        _pub_stamped = _nh.advertise<audio_common_msgs::AudioDataStamped>("audio_stamped", 10, true);
 
         _loop = g_main_loop_new(NULL, false);
         _pipeline = gst_pipeline_new("ros_pipeline");
@@ -159,13 +164,26 @@ namespace audio_transport
         exit(code);
       }
 
-      void publish( const audio_common_msgs::AudioData &msg )
-      {
-        _pub.publish(msg);
+      void publish(const ros::Time &t, const unsigned char *data, size_t size) {
+        if (_pub.getNumSubscribers() > 0) {
+          audio_common_msgs::AudioData msg;
+          msg.data.resize(size);
+          memcpy( &msg.data[0], data, size);
+          _pub.publish(msg);
+        }
+        if (_pub_stamped.getNumSubscribers() > 0) {
+          audio_common_msgs::AudioDataStamped msg;
+          msg.header.stamp = t;
+          msg.header.frame_id = _frame_id;
+          msg.data.resize(size);
+          memcpy( &msg.data[0], data, size);
+          _pub_stamped.publish(msg);
+        }
       }
 
       static GstFlowReturn onNewBuffer (GstAppSink *appsink, gpointer userData)
       {
+        ros::Time t = ros::Time::now();
         RosGstCapture *server = reinterpret_cast<RosGstCapture*>(userData);
         GstMapInfo map;
 
@@ -174,14 +192,8 @@ namespace audio_transport
 
         GstBuffer *buffer = gst_sample_get_buffer(sample);
 
-        audio_common_msgs::AudioData msg;
         gst_buffer_map(buffer, &map, GST_MAP_READ);
-        msg.data.resize( map.size );
-
-        memcpy( &msg.data[0], map.data, map.size );
-
-        server->publish(msg);
-
+        server->publish(t, map.data, map.size);
         return GST_FLOW_OK;
       }
 
@@ -203,7 +215,8 @@ namespace audio_transport
     private:
       ros::NodeHandle _nh;
       ros::Publisher _pub;
-
+      ros::Publisher _pub_stamped;
+      std::string    _frame_id;
       boost::thread _gst_thread;
 
       GstElement *_pipeline, *_source, *_filter, *_sink, *_convert, *_encode;
