@@ -175,9 +175,12 @@ namespace audio_transport
           audio_common_msgs::AudioDataStamped msg;
           msg.header.stamp = t;
           msg.header.frame_id = _frame_id;
-          msg.rate = _sample_rate;
+          msg.format.id       = _format;
+          msg.format.rate     = _sample_rate;
+          msg.format.channels = _channels;
+          msg.format.depth    = _depth;
           msg.data.resize(size);
-          memcpy( &msg.data[0], data, size);
+          memcpy(&msg.data[0], data, size);
           _pub_stamped.publish(msg);
         }
       }

@@ -1,4 +1,4 @@
 # AudioDataStamped
 std_msgs/Header header
-uint32 rate
+AudioFormat format
 uint8[] data
