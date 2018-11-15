@@ -198,6 +198,8 @@ namespace audio_transport
 
         gst_buffer_map(buffer, &map, GST_MAP_READ);
         server->publish(t, map.data, map.size);
+        gst_buffer_unmap(buffer, &map);
+        gst_buffer_unref(buffer);
         return GST_FLOW_OK;
       }
 
