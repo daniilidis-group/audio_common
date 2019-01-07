@@ -197,9 +197,15 @@ namespace audio_transport
         GstBuffer *buffer = gst_sample_get_buffer(sample);
 
         gst_buffer_map(buffer, &map, GST_MAP_READ);
-        server->publish(t, map.data, map.size);
+        msg.data.resize( map.size );
+
+        memcpy( &msg.data[0], map.data, map.size );
+
         gst_buffer_unmap(buffer, &map);
-        gst_buffer_unref(buffer);
+        gst_sample_unref(sample);
+
+        server->publish(msg);
+
         return GST_FLOW_OK;
       }
 
