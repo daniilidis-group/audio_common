@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -UNDEBUG -g -std=c++11 -Wall")
 
 project(audio_play)
 
@@ -16,6 +17,11 @@ catkin_package()
 add_executable(audio_play src/audio_play.cpp)
 target_link_libraries(audio_play ${catkin_LIBRARIES} ${GST1.0_LIBRARIES} ${Boost_LIBRARIES}) 
 add_dependencies(audio_play ${catkin_EXPORTED_TARGETS})
+
+add_executable(raw_audio_player src/raw_audio_player.cpp)
+target_link_libraries(raw_audio_player ${catkin_LIBRARIES} ${GST1.0_LIBRARIES} ${Boost_LIBRARIES}) 
+add_dependencies(raw_audio_player ${catkin_EXPORTED_TARGETS})
+
 
 install(TARGETS audio_play 
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

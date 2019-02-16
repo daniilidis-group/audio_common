@@ -111,7 +111,7 @@ namespace audio_transport
 
           gst_bin_add_many( GST_BIN(_pipeline), _source, _filter, _convert, _encode, _sink, NULL);
           link_ok = gst_element_link_many(_source, _filter, _convert, _encode, _sink, NULL);
-        } else if (_format == "wave") {
+        } else {
           GstCaps *caps;
           caps = gst_caps_new_simple("audio/x-raw",
                                      "channels", G_TYPE_INT, _channels,
@@ -125,21 +125,7 @@ namespace audio_transport
           gst_caps_unref(caps);
           gst_bin_add_many( GST_BIN(_pipeline), _source, _sink, NULL);
           link_ok = gst_element_link_many( _source, _sink, NULL);
-        } else {
-          ROS_ERROR_STREAM("format must be \"wave\" or \"mp3\"");
-          exitOnMainThread(1);
         }
-        /*}
-        else
-        {
-          _sleep_time = 10000;
-          _source = gst_element_factory_make("filesrc", "source");
-          g_object_set(G_OBJECT(_source), "location", source_type.c_str(), NULL);
-
-          gst_bin_add_many( GST_BIN(_pipeline), _source, _sink, NULL);
-          gst_element_link_many(_source, _sink, NULL);
-        }
-        */
 
         if (!link_ok) {
           ROS_ERROR_STREAM("Unsupported media type.");
