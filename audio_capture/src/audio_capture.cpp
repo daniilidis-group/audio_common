@@ -2,8 +2,11 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <boost/thread.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <ros/ros.h>
+#include <diagnostic_updater/publisher.h>
+#include <diagnostic_updater/diagnostic_updater.h>
 
 #include "audio_common_msgs/AudioData.h"
 #include "audio_common_msgs/AudioDataStamped.h"
@@ -32,7 +35,14 @@ namespace audio_transport
         ros::param::param<int>("~channels", _channels, 1);
         ros::param::param<int>("~depth", _depth, 16);
         ros::param::param<int>("~sample_rate", _sample_rate, 16000);
-
+        double window_size, min_delay, max_delay, fcallback, ftol;
+        ros::param::param<double>("~callback_frequency", fcallback, 100);
+        ros::param::param<double>("~diagnostic_freq_tolerance", ftol, 0.05);
+        ros::param::param<double>("~diagnostic_window_size", window_size, 10.0);
+        ros::param::param<double>("~diagnostic_min_delay", min_delay, -2.0/fcallback);
+        ros::param::param<double>("~diagnostic_max_delay", max_delay,  2.0/fcallback);
+        _min_sample_rate = fcallback * (1.0 - ftol);
+        _max_sample_rate = fcallback * (1.0 + ftol);
         // The destination of the audio
         ros::param::param<std::string>("~dst", dst_type, "appsink");
 
@@ -43,6 +53,12 @@ namespace audio_transport
 
         _pub = _nh.advertise<audio_common_msgs::AudioData>("audio", 10, true);
         _pub_stamped = _nh.advertise<audio_common_msgs::AudioDataStamped>("audio_stamped", 10, true);
+        _updater.setHardwareID(device.empty() ? "none" : device);
+        _diagnostic.reset(new diagnostic_updater::TopicDiagnostic(
+                            "audio", _updater,
+                            diagnostic_updater::FrequencyStatusParam(&_min_sample_rate,
+                                                                     &_max_sample_rate, 0.0, window_size),
+                            diagnostic_updater::TimeStampStatusParam(min_delay, max_delay)));
 
         _loop = g_main_loop_new(NULL, false);
         _pipeline = gst_pipeline_new("ros_pipeline");
@@ -169,6 +185,8 @@ namespace audio_transport
           memcpy(&msg.data[0], data, size);
           _pub_stamped.publish(msg);
         }
+        _diagnostic->tick(t);
+        _updater.update();
       }
 
       static GstFlowReturn onNewBuffer (GstAppSink *appsink, gpointer userData)
@@ -211,6 +229,10 @@ namespace audio_transport
       ros::Publisher _pub_stamped;
       std::string    _frame_id;
       boost::thread _gst_thread;
+      diagnostic_updater::Updater _updater;
+      boost::shared_ptr<diagnostic_updater::TopicDiagnostic> _diagnostic;
+      double _min_sample_rate;
+      double _max_sample_rate;
 
       GstElement *_pipeline, *_source, *_filter, *_sink, *_convert, *_encode;
       GstBus *_bus;

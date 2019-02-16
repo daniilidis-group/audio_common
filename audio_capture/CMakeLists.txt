@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(audio_capture)
 
-find_package(catkin REQUIRED COMPONENTS roscpp audio_common_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp diagnostic_updater audio_common_msgs)
 
 find_package(PkgConfig)
 pkg_check_modules(GST1.0 gstreamer-1.0 REQUIRED)
