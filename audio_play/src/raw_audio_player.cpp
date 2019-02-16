@@ -64,11 +64,14 @@ namespace audio_transport {
         ROS_ERROR_STREAM("out channel #2 out of range!");
         return;
       }
-      // initialize gst
-      gst_init(NULL, NULL);
+      setupGStreamer();
       // subscribe to ROS
       sub_      = nh_.subscribe("audio_stamped", 10,
                                 &RawAudioPlayer::callback, this);
+    }
+    void setupGStreamer() {
+      // initialize gst
+      gst_init(NULL, NULL);
       // create a new loop object
       loop_     = g_main_loop_new(NULL, false);
       // create the complete pipeline (will link to it later)
@@ -198,5 +201,6 @@ int main (int argc, char **argv) {
   ros::init(argc, argv, "raw_audio_player");
   ros::NodeHandle pnh("~");
   audio_transport::RawAudioPlayer node(pnh);
+  ROS_INFO_STREAM("calling ros spin!");
   ros::spin();
 }
