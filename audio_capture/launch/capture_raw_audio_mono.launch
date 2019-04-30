@@ -1,0 +1,14 @@
+<launch>
+  <arg name="ns" default="audio"/>
+  <group ns="$(arg ns)">
+    <node name="audio_capture" pkg="audio_capture" type="audio_capture" output="screen">
+      #      <param name="device" value="hw:2,0"/>
+      <param name="device" value="hw:1,0"/>
+      <param name="channels" value="1"/>
+      <param name="sample_rate" value="48000"/>
+      <param name="format" value="S16LE"/>
+      <param name="ns" value="audio"/>
+      <param name="depth" value="16"/>
+    </node>
+  </group>
+</launch>
