@@ -56,7 +56,7 @@ namespace audio_transport {
       }
     }
 
-    bool startGst() {
+    void startGst() {
       _gst_thread = std::thread(&RosGstCapture::run, this);
     }
 
