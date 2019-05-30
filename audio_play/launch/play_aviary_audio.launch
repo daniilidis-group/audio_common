@@ -1,0 +1,13 @@
+<launch>
+  <arg name="ns" default="audio"/>
+  <node name="audio_player" pkg="audio_play" type="raw_audio_player"
+	clear_params="true" output="screen">
+    <param name="audio_in_rate" value="48000"/>
+    <param name="audio_in_format" value="S24LE"/>
+    <param name="audio_in_depth" value="24"/>
+    <param name="num_audio_in_channels" value="24"/>
+    <rosparam param="out_channels"> [23]
+    </rosparam>
+    <remap from="~audio_stamped"  to="/audio/audio_stamped"/>
+  </node>
+</launch>
